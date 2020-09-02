@@ -67,7 +67,6 @@ def disable_Water_Sensor():
     timedSwitch["state"] = "normal"
     global waterSensorEnabled
     waterSensorEnabled = False
-    print("closed")
     
 def activate_Timer():
     valveSwitch["state"] = "disabled"
