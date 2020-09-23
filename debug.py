@@ -6,7 +6,7 @@ import tkinter.ttk as ttk
 import time
 import math
 
-from utils import Stopwatch
+from rm_utils import Stopwatch
 
 if USE_GPIO:
     import RPi.GPIO as GPIO # import RPi.GPIO module
