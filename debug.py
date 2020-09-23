@@ -1,3 +1,4 @@
+# set to False when only testing GUI, True on RPi
 USE_GPIO = False
 
 import tkinter as tk
