@@ -18,39 +18,40 @@ if USE_GPIO:
 MAX_OPEN_SECONDS = 300 # 5 minutes
 UPDATE_MS = 10 # time between updates
 
-timerProgress = 0 # current progress of timer
-timerEnabled = False # if timer is enabled
 waterSensorEnabled = False # if water sensor is enabled
 
-timeOpen = Stopwatch()
+valveTimer = Stopwatch()
+timedValveTimer = Stopwatch()
 
 def water_Detected():
     if USE_GPIO:
-        return GPIO.input(40)
+        return GPIO.input(WATER_SIGNAL_GPIO)
     else:
         return 0
 
 def open_Valve():
-    timeOpen.start()
+    valveTimer.start()
     if USE_GPIO:
         GPIO.output(VALVE_SIGNAL_GPIO, 1)
     
 def close_Valve():
-    timeOpen.stop()
+    valveTimer.stop()
     if USE_GPIO:
         GPIO.output(VALVE_SIGNAL_GPIO, 0)
 
-def update_time_open():
-    if timeOpen.running:
-        curTimeOpen = timeOpen.value()
+def update_valve_timer():
+    # if valveTimer is running, valve is on, so update notificationLabel and check if time exceeded
+    if valveTimer.running:
+        curTimeOpen = valveTimer.value()
         notificationLabel.config(text = str(math.floor(curTimeOpen)) + ' seconds open')
 
         if curTimeOpen >= MAX_OPEN_SECONDS:
             stop_all()
+    # reset valveTimer at midnight
     elif time.strftime("%H%:%M:%S") == "00:00:00":
-        timeOpen.reset()
+        valveTimer.reset()
 
-    notificationLabel.after(UPDATE_MS, update_time_open)
+    notificationLabel.after(UPDATE_MS, update_valve_timer)
 
 def update_Clock():
     timeDate = time.asctime()
@@ -101,45 +102,47 @@ def activate_Timer():
     valveSwitch["state"] = "disabled"
     timedSwitch["state"] = "disabled"
     waterSwitch["state"] = "disabled"
-    global timerEnabled
-    timerEnabled = True
+    timedValveTimer.start()
     timed_Valve_Open()
+    open_Valve()
 
 def deactivate_Timer():
     valveSwitch["state"] = "normal"
     timedSwitch["state"] = "normal"
     waterSwitch["state"] = "normal"
-    global timerProgress
-    global timerEnabled
-    timerProgress = 0
-    timerEnabled = False
+    # stop and reset timer so that timer stops and progress bar resets
+    timedValveTimer.stop()
+    timedValveTimer.reset()
     close_Valve()
 
 def timed_Valve_Open():
-    global timerProgress
-    global timerEnabled
-    timerProgress += 1
-    timerProgressBar['value'] = timerProgress
-    open_Valve()
-    if timerProgressBar['value'] >= timerProgressBar['maximum'] or not timerEnabled:
+    timerProgressBar['value'] = timedValveTimer.value()
+    # if timer exceeded maximum value, call deactivate_Timer and return
+    if timerProgressBar['value'] >= timerProgressBar['maximum']:
         deactivate_Timer()
-        return    
-    root.after(1000, timed_Valve_Open)
+        return
+    # if timer is not running, the timer is already disabled, so return without calling deactivate_Timer
+    elif not timedValveTimer.running:
+        return
+    root.after(500, timed_Valve_Open)
 
 def stop_all():
+    # stops all valve methods and, if max time exceeded, disables buttons
     disable_Water_Sensor()
     deactivate_Timer()
     manual_close_Valve()
 
-    if timeOpen.value() >= MAX_OPEN_SECONDS:
+    if valveTimer.value() >= MAX_OPEN_SECONDS:
         disable_all()
 
 def reset_all():
-    timeOpen.reset()
+    # resets timer before calling stop_all to ensure buttons are not disabled
+    valveTimer.reset()
     notificationLabel.config(text = '0 seconds open')
     stop_all()
 
 def disable_all():
+    # disables all buttons
     valveSwitch["state"] = "disabled"
     timedSwitch["state"] = "disabled"
     waterSwitch["state"] = "disabled"
@@ -185,7 +188,7 @@ try:
     notificationLabel.pack(side = "top", pady = (10, 0))
 
     update_Clock()
-    update_time_open()
+    update_valve_timer()
     root.mainloop()
 
 finally:
