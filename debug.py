@@ -5,6 +5,8 @@ import tkinter.ttk as ttk
 import time
 import math
 
+from utils import Stopwatch
+
 if USE_GPIO:
     import RPi.GPIO as GPIO # import RPi.GPIO module
     GPIO.setmode(GPIO.BOARD)
@@ -16,13 +18,11 @@ if USE_GPIO:
 MAX_OPEN_SECONDS = 300 # 5 minutes
 UPDATE_MS = 10 # time between updates
 
-valveEnabled = False # if valve is enabled
 timerProgress = 0 # current progress of timer
 timerEnabled = False # if timer is enabled
 waterSensorEnabled = False # if water sensor is enabled
 
-timeTotal = 0 # total time valve has been open
-timePrev = time.perf_counter() # previous time at which timeTotal was updated, used for calculation purposes
+timeOpen = Stopwatch()
 
 def water_Detected():
     if USE_GPIO:
@@ -31,35 +31,25 @@ def water_Detected():
         return 0
 
 def open_Valve():
-    global valveEnabled
-    valveEnabled = True
+    timeOpen.start()
     if USE_GPIO:
         GPIO.output(VALVE_SIGNAL_GPIO, 1)
     
 def close_Valve():
-    global valveEnabled
-    valveEnabled = False
+    timeOpen.stop()
     if USE_GPIO:
         GPIO.output(VALVE_SIGNAL_GPIO, 0)
 
 def update_time_open():
-    global timeTotal
-    global timePrev
-    global valveEnabled
+    if timeOpen.running:
+        curTimeOpen = timeOpen.value()
+        notificationLabel.config(text = str(math.floor(curTimeOpen)) + ' seconds open')
 
-    timeCurrent = time.perf_counter()
-
-    if valveEnabled:
-        timeTotal += timeCurrent - timePrev
-        notificationLabel.config(text = str(math.floor(timeTotal)) + ' seconds open')
-
-        if timeTotal * 100 >= MAX_OPEN_SECONDS:
+        if curTimeOpen >= MAX_OPEN_SECONDS:
             stop_all()
-            disable_all()
     elif time.strftime("%H%:%M:%S") == "00:00:00":
-        timeTotal = 0
+        timeOpen.reset()
 
-    timePrev = timeCurrent
     notificationLabel.after(UPDATE_MS, update_time_open)
 
 def update_Clock():
@@ -136,12 +126,18 @@ def timed_Valve_Open():
         return    
     root.after(1000, timed_Valve_Open)
 
-def reset_all():
+def stop_all():
     disable_Water_Sensor()
     deactivate_Timer()
     manual_close_Valve()
-    global timeTotal
-    timeTotal = 0
+
+    if timeOpen.value() >= MAX_OPEN_SECONDS:
+        disable_all()
+
+def reset_all():
+    timeOpen.reset()
+    notificationLabel.config(text = '0 seconds open')
+    stop_all()
 
 def disable_all():
     valveSwitch["state"] = "disabled"
