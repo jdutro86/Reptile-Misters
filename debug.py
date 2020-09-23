@@ -109,17 +109,13 @@ def water_Check_Mode(): # Idle mode that checks for water now that sensor has be
         return
 
 def activate_Timer(): # Activates the timer mode
-    valveSwitch["state"] = "disabled"
-    timedSwitch["state"] = "disabled"
-    waterSwitch["state"] = "disabled"
+    disable_all()
     timedValveTimer.start()
     timed_Valve_Open()
     open_Valve()
 
 def deactivate_Timer(): # Deactivates the timer mode
-    valveSwitch["state"] = "normal"
-    timedSwitch["state"] = "normal"
-    waterSwitch["state"] = "normal"
+    enable_all()
     # stop and reset timer so that timer stops and progress bar resets
     timedValveTimer.stop()
     timedValveTimer.reset()
@@ -150,10 +146,15 @@ def reset_all(): # Resets GUI to a 'default state'
     notificationLabel.config(text = '0 seconds open')
     stop_all()
 
-def disable_all(): # Disabled all GUI buttons
+def disable_all(): # Disables all GUI buttons
     valveSwitch["state"] = "disabled"
     timedSwitch["state"] = "disabled"
     waterSwitch["state"] = "disabled"
+
+def enable_all(): # Enables all GUI buttons
+    valveSwitch["state"] = "normal"
+    timedSwitch["state"] = "normal"
+    waterSwitch["state"] = "normal"
 
 # Main
 try:

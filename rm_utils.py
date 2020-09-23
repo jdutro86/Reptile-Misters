@@ -8,12 +8,14 @@ class Stopwatch(object):
         self.total_time = 0
 
     def start(self):
-        self.start_time = time.time()
-        self.running = True
+        if not self.running:
+            self.start_time = time.time()
+            self.running = True
 
     def stop(self):
-        self.total_time += time.time() - self.start_time
-        self.running = False
+        if self.running:
+            self.total_time += time.time() - self.start_time
+            self.running = False
 
     def reset(self):
         self.total_time = 0
