@@ -20,11 +20,12 @@ MAX_OPEN_SECONDS = 300 # 5 minutes
 UPDATE_MS = 10 # time between updates
 
 waterSensorEnabled = False # if water sensor is enabled
+valveTimerShouldReset = False # fix for leaving valve on over midnight
 
 valveTimer = Stopwatch()
 timedValveTimer = Stopwatch()
 
-def water_Detected():
+def water_Detected(): # GPIO signal if water detected
     if USE_GPIO:
         return GPIO.input(WATER_SIGNAL_GPIO)
     else:
@@ -41,20 +42,27 @@ def close_Valve(): # GPIO signal to close water valve
         GPIO.output(VALVE_SIGNAL_GPIO, 0)
 
 def update_valve_timer():
+    global valveTimerShouldReset
+
     # if valveTimer is running, valve is on, so update notificationLabel and check if time exceeded
     if valveTimer.running:
         curTimeOpen = valveTimer.value()
         notificationLabel.config(text = str(math.floor(curTimeOpen)) + ' seconds open')
 
+        # stop everything if exceeded maximum time for the day
         if curTimeOpen >= MAX_OPEN_SECONDS:
             stop_all()
-    # reset valveTimer at midnight
-    elif time.strftime("%H%:%M:%S") == "00:00:00":
+        # indicate valveTimer should be reset after the valve shuts off
+        if time.strftime("%H%:%M:%S") == "00:00:00":
+            valveTimerShouldReset = True
+    # reset valveTimer at midnight, or if valve shut off and midnight has passed
+    elif time.strftime("%H%:%M:%S") == "00:00:00" or valveTimerShouldReset:
+        valveTimerShouldReset = False
         valveTimer.reset()
 
     notificationLabel.after(UPDATE_MS, update_valve_timer)
 
-def update_Clock(): # Updates Clock at top banner every 1 second (1000 miliseconds)
+def update_Clock(): # Updates Clock at top banner every 0.5 second (500 miliseconds)
     timeDate = time.asctime()
     clockLabel.config(text = timeDate)
     clockLabel.after(500, update_Clock)
@@ -128,8 +136,7 @@ def timed_Valve_Open(): # Idle state to wait for timer to reach time limit
         return
     root.after(500, timed_Valve_Open)
 
-def stop_all():
-    # stops all valve methods and, if max time exceeded, disables buttons
+def stop_all(): # Stops valve, all GUI methods, and disables buttons if max time exceeded
     disable_Water_Sensor()
     deactivate_Timer()
     manual_close_Valve()
@@ -137,14 +144,13 @@ def stop_all():
     if valveTimer.value() >= MAX_OPEN_SECONDS:
         disable_all()
 
-def reset_all():
-    # resets timer before calling stop_all to ensure buttons are not disabled
+def reset_all(): # Resets GUI to a 'default state'
+    # resets valveTimer before calling stop_all to ensure buttons are not disabled
     valveTimer.reset()
     notificationLabel.config(text = '0 seconds open')
     stop_all()
 
-def disable_all():
-    # disables all buttons
+def disable_all(): # Disabled all GUI buttons
     valveSwitch["state"] = "disabled"
     timedSwitch["state"] = "disabled"
     waterSwitch["state"] = "disabled"
@@ -183,8 +189,8 @@ try:
                                        maximum = MAX_OPEN_SECONDS, value = 0)
     timerProgressBar.pack(side = "bottom", pady = (40, 0), fill = 'both')
 
-    emergencyReset = tk.Button(root, text = "EMERGENCY RESET", font = ('calibri', 20, 'bold'), width = 20, height = 3, command = reset_all)
-    emergencyReset.pack(side = "top", pady = (10, 0))
+    emergencyStop = tk.Button(root, text = "EMERGENCY STOP", font = ('calibri', 20, 'bold'), width = 20, height = 3, command = stop_all)
+    emergencyStop.pack(side = "top", pady = (10, 0))
 
     notificationLabel = tk.Label(root, font = ('calibri', 20, 'bold'), text = '0 seconds open')
     notificationLabel.pack(side = "top", pady = (10, 0))
