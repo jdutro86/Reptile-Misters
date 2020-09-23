@@ -15,32 +15,32 @@ timerProgress = 0
 waterSensorEnabled = False
 
 def water_Detected():
-    return GPIO.input(40)
+    return GPIO.input(WATER_SIGNAL_GPIO)
 
-def signal_Open_Valve():
+def signal_Open_Valve(): #GPIO signal to open water valve
     GPIO.output(VALVE_SIGNAL_GPIO, 1)
     
-def signal_Close_Valve():
+def signal_Close_Valve(): #GPIO signal to close water valve
     GPIO.output(VALVE_SIGNAL_GPIO, 0)
     
-def update_Clock():
+def update_Clock(): #Updates Clock at top banner every 1 second (1000 miliseconds)
     timeDate = time.asctime(time.localtime(time.time()))
     clockLabel.config(text = timeDate)
     clockLabel.after(1000, update_Clock)
 
-def open_Valve():
+def open_Valve(): #Function to open valve and deactivate other buttons
     valveSwitch.config(text = "Close Valve", command = close_Valve)
     timedSwitch["state"] = "disabled"
     waterSwitch["state"] = "disabled"
     signal_Open_Valve()
     
-def close_Valve():
+def close_Valve(): #Function to close valve and activate other buttons
     valveSwitch.config(text = "Open Valve", command = open_Valve)
     timedSwitch["state"] = "normal"
     waterSwitch["state"] = "normal"
     signal_Close_Valve()
     
-def enable_Water_Sensor():
+def enable_Water_Sensor(): #Activates Check for Water Mode
     waterSwitch.config(text = "Disable\n Water Sensor", command = disable_Water_Sensor)
     waterLabel.config(text = "No Water Detected\n Valve Closed")
     valveSwitch["state"] = "disabled"
@@ -49,18 +49,19 @@ def enable_Water_Sensor():
     waterSensorEnabled = True
     water_Check_Mode()
     
-def water_Check_Mode():
-    if water_Detected() and waterSensorEnabled:
+def water_Check_Mode(): #Idle mode that checks for water now that sensor has been activated
+    if water_Detected() and waterSensorEnabled: #Water Detected
         signal_Open_Valve()
         waterLabel.config(text = "Water Detected\n Valve Open")
         root.after(10, water_Check_Mode)
-    elif waterSensorEnabled:
+    elif waterSensorEnabled: #No Water Detected
+        signal_Close_Valve()
         waterLabel.config(text = "No Water Detected\n Valve Closed")
         root.after(10, water_Check_Mode)
     else:
         return
         
-def disable_Water_Sensor():
+def disable_Water_Sensor(): #Deactivates Check for Water Mode
     waterSwitch.config(text = "Enable\n Water Sensor", command = enable_Water_Sensor)
     waterLabel.config(text = "Water Sensor Disabled")
     valveSwitch["state"] = "normal"
@@ -68,13 +69,13 @@ def disable_Water_Sensor():
     global waterSensorEnabled
     waterSensorEnabled = False
     
-def activate_Timer():
+def activate_Timer(): #Activates the timer mode
     valveSwitch["state"] = "disabled"
     timedSwitch["state"] = "disabled"
     waterSwitch["state"] = "disabled"
     timed_Valve_Open()
 
-def timed_Valve_Open():
+def timed_Valve_Open(): #Idle state to wait for timer to reach time limit
     global timerProgress
     timerProgress += 1
     timerProgressBar['value'] = timerProgress
