@@ -53,8 +53,11 @@ def update_time_open():
         timeTotal += timeCurrent - timePrev
         notificationLabel.config(text = str(math.floor(timeTotal)) + ' seconds open')
 
-        if timeTotal >= MAX_OPEN_SECONDS:
+        if timeTotal * 100 >= MAX_OPEN_SECONDS:
             stop_all()
+            disable_all()
+    elif time.strftime("%H%:%M:%S") == "00:00:00":
+        timeTotal = 0
 
     timePrev = timeCurrent
     notificationLabel.after(UPDATE_MS, update_time_open)
@@ -133,10 +136,17 @@ def timed_Valve_Open():
         return    
     root.after(1000, timed_Valve_Open)
 
-def stop_all():
+def reset_all():
     disable_Water_Sensor()
     deactivate_Timer()
     manual_close_Valve()
+    global timeTotal
+    timeTotal = 0
+
+def disable_all():
+    valveSwitch["state"] = "disabled"
+    timedSwitch["state"] = "disabled"
+    waterSwitch["state"] = "disabled"
 
 # Main
 try:
@@ -172,8 +182,8 @@ try:
                                        maximum = MAX_OPEN_SECONDS, value = 0)
     timerProgressBar.pack(side = "bottom", pady = (40, 0), fill = 'both')
 
-    emergencyStop = tk.Button(root, text = "EMERGENCY STOP", font = ('calibri', 20, 'bold'), width = 20, height = 3, command = stop_all)
-    emergencyStop.pack(side = "top", pady = (10, 0))
+    emergencyReset = tk.Button(root, text = "EMERGENCY RESET", font = ('calibri', 20, 'bold'), width = 20, height = 3, command = reset_all)
+    emergencyReset.pack(side = "top", pady = (10, 0))
 
     notificationLabel = tk.Label(root, font = ('calibri', 20, 'bold'), text = '0 seconds open')
     notificationLabel.pack(side = "top", pady = (10, 0))
