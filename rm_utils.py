@@ -1,6 +1,10 @@
+"""rm_utils.py
+Contains any utility objects/methods for our project.
+"""
+
 import time
 
-# just allows easier tracking of time
+# Allows simplified tracking of time
 class Stopwatch(object):
     def __init__(self):
         self.start_time = time.time()
