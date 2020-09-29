@@ -62,20 +62,20 @@ def update_valve_timer():
 def update_clock(): # Updates Clock at top banner every 0.5 second (500 miliseconds)
     timeDate = time.asctime()
     clockLabel.config(text = timeDate)
-    clockLabel.after(500, update_Clock)
+    clockLabel.after(500, update_clock)
 
 def manual_open_valve(): # Function to open valve and deactivate other buttons
-    valveSwitch.config(text = "Close Valve", command = manual_close_Valve)
+    valveSwitch.config(text = "Close Valve", command = manual_close_valve)
     disable_button(timedSwitch, waterSwitch)
     open_valve()
     
 def manual_close_valve(): # Function to close valve and activate other buttons
-    valveSwitch.config(text = "Open Valve", command = manual_open_Valve)
+    valveSwitch.config(text = "Open Valve", command = manual_open_valve)
     enable_button(timedSwitch, waterSwitch)
     close_valve()
     
 def enable_water_sensor(): # Activates Check for Water Mode
-    waterSwitch.config(text = "Disable\n Water Sensor", command = disable_Water_Sensor)
+    waterSwitch.config(text = "Disable\n Water Sensor", command = disable_water_sensor)
     waterLabel.config(text = "No Water Detected\n Valve Closed")
     disable_button(valveSwitch, timedSwitch)
     global waterSensorEnabled
@@ -83,7 +83,7 @@ def enable_water_sensor(): # Activates Check for Water Mode
     water_check_mode()
 
 def disable_water_sensor(): # Deactivates Check for Water Mode
-    waterSwitch.config(text = "Enable\n Water Sensor", command = enable_Water_Sensor)
+    waterSwitch.config(text = "Enable\n Water Sensor", command = enable_water_sensor)
     waterLabel.config(text = "Water Sensor Disabled")
     enable_button(valveSwitch, timedSwitch)
     global waterSensorEnabled
