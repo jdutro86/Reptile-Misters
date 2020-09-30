@@ -52,3 +52,43 @@ class TimeStampLog():
 
     def get_time_open(self):
         return str(round(self.closeTimeList[self.timeStampCount]-self.openTimeList[self.timeStampCount], 2))
+
+# Contains information for a single lizard tank
+class Tank(object):
+    # FLOW_RATE should be in volume per second
+    FLOW_RATE = 0
+
+    @staticmethod
+    def set_flow_rate(val):
+        Tank.FLOW_RATE = val
+
+    def __init__(self, tankVolume=1, expectedWater=1, lizards={}):
+        self.tankVolume = tankVolume
+        self.expectedWater = expectedWater
+        self.currentWater = 0
+        self.lizards = lizards
+
+    def species(self):
+        return self.lizards.keys()
+
+    # species is the key, gender should be 0 or 1, 0 for males, 1 for females
+    def add_lizard(self, species, gender, n=1):
+        if species not in self.lizards:
+            self.lizards[species] = [0, 0]
+        self.lizards[species][gender] += n
+
+    def remove_lizard(self, species, gender, n=1):
+        if species in self.lizards and self.lizards[species][gender] >= n:
+            self.lizards[species][gender] -= n
+
+            if self.lizards[species][0] == 0 and self.lizards[species][1] == 0:
+                self.lizards.pop(species)
+
+    def update(self, dt):
+        self.currentWater += Tank.FLOW_RATE * dt
+
+    def drain(self):
+        self.currentWater = 0
+
+    def get_fraction(self):
+        return self.currentWater / self.expectedWater
