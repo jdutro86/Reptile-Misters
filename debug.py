@@ -4,6 +4,7 @@ import time
 import math
 
 from rm_utils import Stopwatch
+from rm_utils import TimeStampLog
 
 try: # Check if running on Raspi
     import RPi.GPIO as GPIO # import RPi.GPIO module
@@ -24,17 +25,22 @@ valveTimerShouldReset = False # fix for leaving valve on over midnight
 
 valveTimer = Stopwatch()
 timedValveTimer = Stopwatch()
+valveRecord = TimeStampLog()
 
 def water_detected(): # GPIO signal if water detected
     return GPIO.input(WATER_SIGNAL_GPIO) if USE_GPIO else 0
 
 def open_valve(): # GPIO signal to open water valve
     valveTimer.start()
+    valveRecord.open_time(time.time())
+    lastOpenLabel.config(text = 'Last open: ' + valveRecord.get_last_open())
     if USE_GPIO:
         GPIO.output(VALVE_SIGNAL_GPIO, 1)
     
 def close_valve(): # GPIO signal to close water valve
     valveTimer.stop()
+    valveRecord.close_time(time.time())
+    lastOpenLabel.config(text = 'Last open: ' + valveRecord.get_last_open() + " for " + valveRecord.get_time_open() + " seconds")
     if USE_GPIO:
         GPIO.output(VALVE_SIGNAL_GPIO, 0)
 
@@ -116,11 +122,11 @@ def deactivate_timer(): # Deactivates the timer mode
 
 def timed_valve_open(): # Idle state to wait for timer to reach time limit
     timerProgressBar['value'] = timedValveTimer.value()
-    # if timer exceeded maximum value, call deactivate_Timer and return
+    # if timer exceeded maximum value, call deactivate_timer and return
     if timerProgressBar['value'] >= timerProgressBar['maximum']:
         deactivate_timer()
         return
-    # if timer is not running, the timer is already disabled, so return without calling deactivate_Timer
+    # if timer is not running, the timer is already disabled, so return without calling deactivate_timer
     elif not timedValveTimer.running:
         return
     root.after(500, timed_valve_open)
@@ -128,7 +134,6 @@ def timed_valve_open(): # Idle state to wait for timer to reach time limit
 def stop_all(): # Stops valve, all GUI methods, and disables buttons if max time exceeded
     disable_water_sensor()
     deactivate_timer()
-    manual_close_valve()
 
     if valveTimer.value() >= MAX_OPEN_SECONDS:
         disable_button(valveSwitch, waterSwitch, timedSwitch)
@@ -184,8 +189,11 @@ try:
     emergencyStop = tk.Button(root, text = "EMERGENCY STOP", font = ('calibri', 20, 'bold'), width = 20, height = 3, command = stop_all)
     emergencyStop.pack(side = "top", pady = (10, 0))
 
-    notificationLabel = tk.Label(root, font = ('calibri', 20, 'bold'), text = '0 seconds open')
+    notificationLabel = tk.Label(root, font = ('calibri', 20, 'bold'), text = "0 seconds open")
     notificationLabel.pack(side = "top", pady = (10, 0))
+
+    lastOpenLabel = tk.Label(root, font = ('calibri', 20, 'bold'), text = "Not yet open today")
+    lastOpenLabel.pack(side = "top", pady = (10, 0))
 
     update_clock()
     update_valve_timer()
