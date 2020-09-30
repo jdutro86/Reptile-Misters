@@ -18,6 +18,7 @@ except ImportError: # If not running on Raspi
     USE_GPIO = False
 
 MAX_OPEN_SECONDS = 300 # 5 minutes
+SLOW_UPDATE_MS = 500 # 500 Miliseconds = 1/2 Second
 UPDATE_MS = 10 # time between updates
 
 waterSensorEnabled = False # if water sensor is enabled
@@ -44,8 +45,12 @@ def close_valve(): # GPIO signal to close water valve
     if USE_GPIO:
         GPIO.output(VALVE_SIGNAL_GPIO, 0)
 
-def update_valve_timer():
+def update_valve_timer(): # Updates the valve's total time open
     global valveTimerShouldReset
+
+    # indicate valveTimer should be reset at midnight
+    if time.strftime("%H:%M:%S") == "00:00:00":
+        valveTimerShouldReset = True
 
     # if valveTimer is running, valve is on, so update notificationLabel and check if time exceeded
     if valveTimer.running:
@@ -53,22 +58,20 @@ def update_valve_timer():
         notificationLabel.config(text = str(math.floor(curTimeOpen)) + ' seconds open')
 
         # stop everything if exceeded maximum time for the day
-        if curTimeOpen >= MAX_OPEN_SECONDS:
+        if curTimeOpen >= constant.MAX_OPEN_SECONDS:
             stop_all()
-        # indicate valveTimer should be reset after the valve shuts off
-        if time.strftime("%H:%M:%S") == "00:00:00":
-            valveTimerShouldReset = True
-    # reset valveTimer at midnight, or if valve shut off and midnight has passed
-    elif time.strftime("%H:%M:%S") == "00:00:00" or valveTimerShouldReset:
+
+    # reset valveTimer if valve is shut off and it should reset
+    elif valveTimerShouldReset:
         valveTimerShouldReset = False
         valveTimer.reset()
 
-    notificationLabel.after(UPDATE_MS, update_valve_timer)
+    notificationLabel.after(constant.UPDATE_MS, update_valve_timer)
 
 def update_clock(): # Updates Clock at top banner every 0.5 second (500 miliseconds)
     timeDate = time.asctime()
     clockLabel.config(text = timeDate)
-    clockLabel.after(500, update_clock)
+    clockLabel.after(SLOW_UPDATE_MS, update_clock)
 
 def manual_open_valve(): # Function to open valve and deactivate other buttons
     valveSwitch.config(text = "Close Valve", command = manual_close_valve)
@@ -129,7 +132,7 @@ def timed_valve_open(): # Idle state to wait for timer to reach time limit
     # if timer is not running, the timer is already disabled, so return without calling deactivate_timer
     elif not timedValveTimer.running:
         return
-    root.after(500, timed_valve_open)
+    root.after(SLOW_UPDATE_MS, timed_valve_open)
 
 def stop_all(): # Stops valve, all GUI methods, and disables buttons if max time exceeded
     disable_water_sensor()
