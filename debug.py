@@ -17,6 +17,7 @@ try: # Check if running on Raspi
 except ImportError: # If not running on Raspi
     USE_GPIO = False
 
+# Constants
 MAX_OPEN_SECONDS = 300 # 5 minutes
 SLOW_UPDATE_MS = 500 # 500 Miliseconds = 1/2 Second
 UPDATE_MS = 10 # time between updates
@@ -58,7 +59,7 @@ def update_valve_timer(): # Updates the valve's total time open
         notificationLabel.config(text = str(math.floor(curTimeOpen)) + ' seconds open')
 
         # stop everything if exceeded maximum time for the day
-        if curTimeOpen >= constant.MAX_OPEN_SECONDS:
+        if curTimeOpen >= MAX_OPEN_SECONDS:
             stop_all()
 
     # reset valveTimer if valve is shut off and it should reset
@@ -66,7 +67,7 @@ def update_valve_timer(): # Updates the valve's total time open
         valveTimerShouldReset = False
         valveTimer.reset()
 
-    notificationLabel.after(constant.UPDATE_MS, update_valve_timer)
+    notificationLabel.after(UPDATE_MS, update_valve_timer)
 
 def update_clock(): # Updates Clock at top banner every 0.5 second (500 miliseconds)
     timeDate = time.asctime()
