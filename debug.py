@@ -20,7 +20,7 @@ except ImportError: # If not running on Raspi
     USE_GPIO = False
 
 # Constants
-MAX_OPEN_SECONDS = 20 # 5 minutes
+MAX_OPEN_SECONDS = 300 # 5 minutes
 SLOW_UPDATE_MS = 500 # 500 Miliseconds = 1/2 Second
 UPDATE_MS = 10 # time between updates
 
