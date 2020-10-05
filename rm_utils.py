@@ -53,6 +53,12 @@ class TimeStampLog():
     def get_time_open(self):
         return str(round(self.closeTimeList[self.timeStampCount]-self.openTimeList[self.timeStampCount], 2))
 
+    def times_open(self):
+        return str(len(self.openTimeList) - 1)
+
+    def times_closed(self):
+        return str(len(self.closeTimeList) - 1)
+
 # Contains information for a single lizard tank
 class Tank(object):
     # FLOW_RATE should be in volume per second
