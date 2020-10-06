@@ -34,6 +34,7 @@ def water_detected(): # GPIO signal if water detected
     return GPIO.input(WATER_SIGNAL_GPIO) if USE_GPIO else 0
 
 def open_valve(): # GPIO signal to open water valve
+    if valveTimer.running: return
     valveTimer.start()
     valveRecord.open_time(time.time())
     window.lastOpenLabel.setText('Last open: ' + valveRecord.get_last_open())
@@ -42,6 +43,7 @@ def open_valve(): # GPIO signal to open water valve
         GPIO.output(VALVE_SIGNAL_GPIO, 1)
     
 def close_valve(): # GPIO signal to close water valve
+    if not valveTimer.running: return
     valveTimer.stop()
     valveRecord.close_time(time.time())
     window.lastOpenLabel.setText('Last open: ' + valveRecord.get_last_open() + " for " + valveRecord.get_time_open() + " seconds")
@@ -101,6 +103,12 @@ def disable_water_sensor(): # Deactivates Check for Water Mode
     waterCheckTimer.stop()
 
 def water_check_mode(): # Idle mode that checks for water now that sensor has been activated
+
+    """
+    Note - just confused about these conditions, also probably should not make them dependent on values which
+    are very very frequently modified and may unforseeably mess up
+    """
+
     if water_detected() and (valveRecord.times_open() == valveRecord.times_closed()): # Water Detected
         open_valve()
         window.waterLabel.setText("Water Detected\n Valve Open")
@@ -136,9 +144,7 @@ def timed_valve_open(): # Idle state to wait for timer to reach time limit
 def stop_all(): # Stops valve, all GUI methods, and disables buttons if max time exceeded
     disable_water_sensor()
     deactivate_timer()
-
-    window.valveSwitch.clicked.connect(manual_open_valve)
-    window.waterSwitch.clicked.connect(enable_water_sensor)
+    manual_close_valve()
 
     if valveTimer.value() >= MAX_OPEN_SECONDS:
         disable_button(window.valveSwitch, window.waterSwitch, window.timedSwitch)
