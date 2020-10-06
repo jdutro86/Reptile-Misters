@@ -34,20 +34,22 @@ def water_detected(): # GPIO signal if water detected
     return GPIO.input(WATER_SIGNAL_GPIO) if USE_GPIO else 0
 
 def open_valve(): # GPIO signal to open water valve
-    if valveTimer.running: return
-    valveTimer.start()
-    valveRecord.open_time(time.time())
-    window.lastOpenLabel.setText('Last open: ' + valveRecord.get_last_open())
-    update_log()
+    # logistical stuff only executes if valve is closed
+    if not valveTimer.running:
+        valveTimer.start()
+        valveRecord.open_time(time.time())
+        window.lastOpenLabel.setText('Last open: ' + valveRecord.get_last_open())
+        update_log()
     if USE_GPIO:
         GPIO.output(VALVE_SIGNAL_GPIO, 1)
     
 def close_valve(): # GPIO signal to close water valve
-    if not valveTimer.running: return
-    valveTimer.stop()
-    valveRecord.close_time(time.time())
-    window.lastOpenLabel.setText('Last open: ' + valveRecord.get_last_open() + " for " + valveRecord.get_time_open() + " seconds")
-    update_log()
+    # logistical stuff only executes if valve is open
+    if valveTimer.running:
+        valveTimer.stop()
+        valveRecord.close_time(time.time())
+        window.lastOpenLabel.setText('Last open: ' + valveRecord.get_last_open() + " for " + valveRecord.get_time_open() + " seconds")
+        update_log()
     if USE_GPIO:
         GPIO.output(VALVE_SIGNAL_GPIO, 0)
 
