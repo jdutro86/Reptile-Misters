@@ -106,15 +106,10 @@ def disable_water_sensor(): # Deactivates Check for Water Mode
 
 def water_check_mode(): # Idle mode that checks for water now that sensor has been activated
 
-    """
-    Note - just confused about these conditions, also probably should not make them dependent on values which
-    are very very frequently modified and may unforseeably mess up
-    """
-
-    if water_detected() and (valveRecord.times_open() == valveRecord.times_closed()): # Water Detected
+    if water_detected() and not valveTimer.running: # Water Detected and valve off
         open_valve()
         window.waterLabel.setText("Water Detected\n Valve Open")
-    elif (valveRecord.times_open() > valveRecord.times_closed()): # No Water Detected
+    elif not water_detected() and valveTimer.running: # No Water Detected and valve on
         close_valve()
         window.waterLabel.setText("No Water Detected\n Valve Closed")
 
