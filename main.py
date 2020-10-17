@@ -129,7 +129,7 @@ def deactivate_timer(): # Deactivates the timer mode
     progressTimer.stop()
 
 def timed_valve_open(): # Idle state to wait for timer to reach time limit
-    window.timerProgress.setValue(timedValveTimer.value())
+    window.timerProgress.setValue(int(timedValveTimer.value()))
     # if timer exceeded maximum value, call deactivate_timer and return
     if window.timerProgress.value() >= MAX_OPEN_SECONDS:
         deactivate_timer()
