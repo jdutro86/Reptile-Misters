@@ -4,7 +4,7 @@ import sys
 import time
 import math
 
-from UI import UI
+from ui import UI
 from rm_utils import Stopwatch
 from rm_utils import TimeStampLog
 
@@ -75,7 +75,7 @@ def update_valve_timer(): # Updates the valve's total time open
         valveTimer.reset()
 
 def manual_open_valve(): # Function to open valve and deactivate other buttons
-    disable_button(window.timedSwitch, window.waterSwitch)
+    #disable_button(window.timedSwitch, window.waterSwitch)
     window.valveSwitch.setText("Close Valve")
     window.valveSwitch.clicked.disconnect()
     window.valveSwitch.clicked.connect(manual_close_valve)
@@ -170,7 +170,7 @@ try:
     app = QApplication([])
     window = UI()
 
-    window.valveSwitch.clicked.connect(manual_open_valve)
+    #window.valveSwitch.clicked.connect(manual_open_valve) #this conflicts with the UI states
     window.waterSwitch.clicked.connect(enable_water_sensor)
     window.timedSwitch.clicked.connect(activate_timer)
     window.stopButton.clicked.connect(stop_all)
