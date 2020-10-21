@@ -2,7 +2,6 @@
 Contains methods for devices connected to the Pi. i.e Water Sensor, Valve, LED Light, Speakers
 """
 
-
 try: # Check if running on Raspi
     import RPi.GPIO as GPIO # import RPi.GPIO module
     GPIO.setmode(GPIO.BOARD)
@@ -16,3 +15,11 @@ except ImportError: # If not running on Raspi
     
 def water_detected(): # GPIO signal if water detected
     return GPIO.input(WATER_SIGNAL_GPIO) if USE_GPIO else 0
+
+def output_valve(signal): # Send GPIO signal to valve
+    if USE_GPIO:
+        GPIO.output(VALVE_SIGNAL_GPIO, signal)
+
+def rpi_cleanup(): # Cleanup RPi.GPIO
+    if USE_GPIO:
+        GPIO.cleanup()
