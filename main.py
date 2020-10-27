@@ -7,17 +7,7 @@ import math
 from ui import UI
 from rm_utils import Stopwatch
 from rm_utils import TimeStampLog
-
-try: # Check if running on Raspi
-    import RPi.GPIO as GPIO # import RPi.GPIO module
-    GPIO.setmode(GPIO.BOARD)
-    WATER_SIGNAL_GPIO = 40
-    VALVE_SIGNAL_GPIO = 38
-    GPIO.setup(WATER_SIGNAL_GPIO, GPIO.IN) # Water Signal In 
-    GPIO.setup(VALVE_SIGNAL_GPIO, GPIO.OUT) # Valve Signal Out
-    USE_GPIO = True
-except ImportError: # If not running on Raspi
-    USE_GPIO = False
+from pin_devices import output_valve, water_detected, rpi_cleanup
 
 # Constants
 MAX_OPEN_SECONDS = 300 # 5 minutes
@@ -30,28 +20,23 @@ valveTimer = Stopwatch()
 timedValveTimer = Stopwatch()
 valveRecord = TimeStampLog()
 
-def water_detected(): # GPIO signal if water detected
-    return GPIO.input(WATER_SIGNAL_GPIO) if USE_GPIO else 0
-
-def open_valve(): # GPIO signal to open water valve
+def open_valve(): # Open valve
     # logistical stuff only executes if valve is closed
     if not valveTimer.running:
         valveTimer.start()
         valveRecord.open_time(time.time())
         window.lastOpenLabel.setText('Last open: ' + valveRecord.get_last_open())
         update_log()
-    if USE_GPIO:
-        GPIO.output(VALVE_SIGNAL_GPIO, 1)
+    output_valve(1)
     
-def close_valve(): # GPIO signal to close water valve
+def close_valve(): # Close valve
     # logistical stuff only executes if valve is open
     if valveTimer.running:
         valveTimer.stop()
         valveRecord.close_time(time.time())
         window.lastOpenLabel.setText('Last open: ' + valveRecord.get_last_open() + " for " + valveRecord.get_time_open() + " seconds")
         update_log()
-    if USE_GPIO:
-        GPIO.output(VALVE_SIGNAL_GPIO, 0)
+    output_valve(0)
 
 def update_valve_timer(): # Updates the valve's total time open
     global valveTimerShouldReset
@@ -196,5 +181,4 @@ try:
     app.exec_()
 
 finally:
-    if USE_GPIO:
-        GPIO.cleanup()
+    rpi_cleanup()
