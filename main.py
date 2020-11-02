@@ -155,7 +155,8 @@ try:
     app = QApplication([])
     window = UI()
 
-    #window.valveSwitch.clicked.connect(manual_open_valve) #this conflicts with the UI states
+    # commented for state machine testing
+    """#window.valveSwitch.clicked.connect(manual_open_valve) #this conflicts with the UI states
     window.waterSwitch.clicked.connect(enable_water_sensor)
     window.timedSwitch.clicked.connect(activate_timer)
     window.stopButton.clicked.connect(stop_all)
@@ -176,7 +177,7 @@ try:
 
     valveTimeOpenTimer = QTimer(window)
     valveTimeOpenTimer.timeout.connect(update_valve_timer)
-    valveTimeOpenTimer.start(UPDATE_MS)
+    valveTimeOpenTimer.start(UPDATE_MS)"""
 
     app.exec_()
 
