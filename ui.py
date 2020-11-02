@@ -58,7 +58,8 @@ class EventLoop(QObject):
         ui.manualEnabled.exited.connect(self.close_valve)
         ui.sensorEnabled.entered.connect(self.waterCheckTimer.start)
         ui.sensorEnabled.exited.connect(self.waterCheckTimer.stop)
-        ui.timerEnabled.entered.connect(self.timedValveTimer.start)
+        ui.timerEnabled.entered.connect(self.activate_timer)
+        ui.timerEnabled.exited.connect(self.deactivate_timer)
 
         # VERY IMPORTANT
         ui.idle.entered.connect(self.close_valve)
@@ -97,12 +98,17 @@ class EventLoop(QObject):
             self.close_valve()
             self.ui.waterLabel.setText("No Water Detected\n Valve Closed")
 
+    def activate_timer(self):
+        # Activate the timed mode
+        self.open_valve()
+        self.timedValveWatch.start()
+        self.timedValveTimer.start()
+
     def deactivate_timer(self):
         # Deactivate the timed mode, including stopwatch resets
         self.timedValveWatch.stop()
         self.timedValveWatch.reset()
         self.timedValveTimer.stop()
-        self.timerFinished.emit()
 
     def timed_valve_open(self):
         # Loop method for timed mode
@@ -110,7 +116,7 @@ class EventLoop(QObject):
         self.ui.timerProgress.setValue(curTimeOpen)
         # If timer exceeded maximum value, exit timed mode
         if curTimeOpen >= MAX_OPEN_SECONDS:
-            self.deactivate_timer()
+            self.timerFinished.emit()
 
     def update_valve_timer(self):
         # Updates the valve's total time open
@@ -172,6 +178,8 @@ class UI(QMainWindow):
         self.manualEnabled = QState()
         self.sensorEnabled = QState()
         self.timerEnabled = QState()
+
+        # unused for now
         self.timerRunning = QState(self.timerEnabled)
         self.timerFinished = QState(self.timerEnabled)
 
