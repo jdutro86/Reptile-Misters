@@ -30,20 +30,20 @@ class EventLoop(QObject):
 
         # QTimer for sensor mode
         self.waterCheckTimer = QTimer(ui)
-        self.waterCheckTimer.timeout.connect(self.water_check_mode)
+        self.waterCheckTimer.timeout.connect(self.sensor_mode)
         self.waterCheckTimer.setInterval(UPDATE_MS)
 
         # QTimer for timed mode
         self.timedValveWatch = Stopwatch()
         self.timedValveTimer = QTimer(ui)
-        self.timedValveTimer.timeout.connect(self.timed_valve_open)
+        self.timedValveTimer.timeout.connect(self.timed_mode)
         self.timedValveTimer.setInterval(UPDATE_MS)
 
         # QTimer for valve open time tracking
         self.valveWatch = Stopwatch()
         self.valveTimeShouldReset = False
         self.valveTimeOpenTimer = QTimer(ui)
-        self.valveTimeOpenTimer.timeout.connect(self.update_valve_timer)
+        self.valveTimeOpenTimer.timeout.connect(self.update_valve_time)
         self.valveTimeOpenTimer.setInterval(UPDATE_MS)
         self.valveTimeOpenTimer.start()
 
@@ -56,10 +56,10 @@ class EventLoop(QObject):
         # State machine-related transition logic
         ui.manualEnabled.entered.connect(self.open_valve)
         ui.manualEnabled.exited.connect(self.close_valve)
-        ui.sensorEnabled.entered.connect(self.waterCheckTimer.start)
-        ui.sensorEnabled.exited.connect(self.waterCheckTimer.stop)
-        ui.timerEnabled.entered.connect(self.activate_timer)
-        ui.timerEnabled.exited.connect(self.deactivate_timer)
+        ui.sensorEnabled.entered.connect(self.activate_sensor_mode)
+        ui.sensorEnabled.exited.connect(self.deactivate_sensor_mode)
+        ui.timerEnabled.entered.connect(self.activate_timed_mode)
+        ui.timerEnabled.exited.connect(self.deactivate_timed_mode)
 
         # VERY IMPORTANT
         ui.idle.entered.connect(self.close_valve)
@@ -87,7 +87,15 @@ class EventLoop(QObject):
         self.ui.logLabel.setText('Open ' + self.valveRecord.times_open() + ' times(s) today\n' +
         'Closed ' + self.valveRecord.times_closed() + ' time(s) today')
 
-    def water_check_mode(self):
+    def activate_sensor_mode(self):
+        # Activate the sensor mode
+        self.waterCheckTimer.start()
+
+    def deactivate_sensor_mode(self):
+        # Deactivate the sensor mode
+        self.waterCheckTimer.start()
+
+    def sensor_mode(self):
         # Loop method for sensor mode
         waterDetected = water_detected()
 
@@ -98,19 +106,19 @@ class EventLoop(QObject):
             self.close_valve()
             self.ui.waterLabel.setText("No Water Detected\n Valve Closed")
 
-    def activate_timer(self):
+    def activate_timed_mode(self):
         # Activate the timed mode
         self.open_valve()
         self.timedValveWatch.start()
         self.timedValveTimer.start()
 
-    def deactivate_timer(self):
-        # Deactivate the timed mode, including stopwatch resets
+    def deactivate_timed_mode(self):
+        # Deactivate the timed mode
         self.timedValveWatch.stop()
         self.timedValveWatch.reset()
         self.timedValveTimer.stop()
 
-    def timed_valve_open(self):
+    def timed_mode(self):
         # Loop method for timed mode
         curTimeOpen = int(self.timedValveWatch.value())
         self.ui.timerProgress.setValue(curTimeOpen)
@@ -118,7 +126,7 @@ class EventLoop(QObject):
         if curTimeOpen >= MAX_OPEN_SECONDS:
             self.timerFinished.emit()
 
-    def update_valve_timer(self):
+    def update_valve_time(self):
         # Updates the valve's total time open
 
         # valveWatch should be reset at midnight
