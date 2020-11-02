@@ -107,10 +107,14 @@ class TimeOpenMode(AbstractMode):
             self.timerWatch.reset()
 
 class ClockMode(AbstractMode):
+    def __init__(self, parent, UPDATE_MS, label):
+        super(ClockMode, self).__init__(parent, UPDATE_MS)
+        self.label = label
+
     def update(self):
         # Updates clockLabel text with current time
         timeDate = time.asctime()
-        self.parent.ui.clockLabel.setText(timeDate)
+        self.label.setText(timeDate)
 
 # Inherits QObject to allow for pyqtSignal usage
 class EventLoop(QObject):
@@ -133,7 +137,7 @@ class EventLoop(QObject):
         self.timeOpenMode.activate()
 
         # QTimer for clock updates
-        self.clockMode = ClockMode(self, self.SLOW_UPDATE_MS)
+        self.clockMode = ClockMode(self, self.SLOW_UPDATE_MS, ui.clockLabel)
         self.clockMode.activate()
 
         # QTimer for sensor mode
