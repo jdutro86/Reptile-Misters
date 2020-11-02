@@ -16,7 +16,9 @@ MAX_OPEN_SECONDS = 300
 SLOW_UPDATE_MS = 500
 UPDATE_MS = 10
 
+# Inherits QObject to allow for pyqtSignal usage
 class EventLoop(QObject):
+    # Custom signals for state transitions
     timerFinished = pyqtSignal()
     timeLimitReached = pyqtSignal()
 
@@ -26,36 +28,43 @@ class EventLoop(QObject):
 
         self.valveRecord = TimeStampLog()
 
+        # QTimer for sensor mode
+        self.waterCheckTimer = QTimer(ui)
+        self.waterCheckTimer.timeout.connect(self.water_check_mode)
+        self.waterCheckTimer.setInterval(UPDATE_MS)
+
+        # QTimer for timed mode
         self.timedValveWatch = Stopwatch()
         self.timedValveTimer = QTimer(ui)
         self.timedValveTimer.timeout.connect(self.timed_valve_open)
         self.timedValveTimer.setInterval(UPDATE_MS)
 
-        self.waterCheckTimer = QTimer(ui)
-        self.waterCheckTimer.timeout.connect(self.water_check_mode)
-        self.waterCheckTimer.setInterval(UPDATE_MS)
-
+        # QTimer for valve open time tracking
         self.valveWatch = Stopwatch()
-        self.valveTimerShouldReset = False
+        self.valveTimeShouldReset = False
         self.valveTimeOpenTimer = QTimer(ui)
         self.valveTimeOpenTimer.timeout.connect(self.update_valve_timer)
         self.valveTimeOpenTimer.setInterval(UPDATE_MS)
         self.valveTimeOpenTimer.start()
 
+        # QTimer for clock updates
         self.clockTimer = QTimer(ui)
         self.clockTimer.timeout.connect(self.update_clock)
-        self.clockTimer.start(SLOW_UPDATE_MS)
+        self.clockTimer.setInterval(SLOW_UPDATE_MS)
+        self.clockTimer.start()
 
+        # State machine-related transition logic
         ui.manualEnabled.entered.connect(self.open_valve)
         ui.manualEnabled.exited.connect(self.close_valve)
         ui.sensorEnabled.entered.connect(self.waterCheckTimer.start)
         ui.sensorEnabled.exited.connect(self.waterCheckTimer.stop)
         ui.timerEnabled.entered.connect(self.timedValveTimer.start)
 
+        # VERY IMPORTANT
         ui.idle.entered.connect(self.close_valve)
 
-    def open_valve(self): # Open valve
-        # logistical stuff only executes if valve is closed
+    def open_valve(self):
+        # Logistical stuff only executes if valve is closed
         if not self.valveWatch.running:
             self.valveWatch.start()
             self.valveRecord.open_time(time.time())
@@ -63,8 +72,8 @@ class EventLoop(QObject):
             self.update_log()
         output_valve(1)
     
-    def close_valve(self): # Close valve
-        # logistical stuff only executes if valve is open
+    def close_valve(self):
+        # Logistical stuff only executes if valve is open
         if self.valveWatch.running:
             self.valveWatch.stop()
             self.valveRecord.close_time(time.time())
@@ -73,51 +82,59 @@ class EventLoop(QObject):
         output_valve(0)
 
     def update_log(self):
+        # Update the logging text
         self.ui.logLabel.setText('Open ' + self.valveRecord.times_open() + ' times(s) today\n' +
         'Closed ' + self.valveRecord.times_closed() + ' time(s) today')
 
-    def water_check_mode(self): # Idle mode that checks for water now that sensor has been activated
-        if water_detected() and not self.valveWatch.running: # Water Detected and valve off
-            open_valve()
+    def water_check_mode(self):
+        # Loop method for sensor mode
+        waterDetected = water_detected()
+
+        if waterDetected and not self.valveWatch.running: # Water Detected and valve off
+            self.open_valve()
             self.ui.waterLabel.setText("Water Detected\n Valve Open")
-        elif not water_detected() and self.valveWatch.running: # No Water Detected and valve on
-            close_valve()
+        elif not waterDetected and self.valveWatch.running: # No Water Detected and valve on
+            self.close_valve()
             self.ui.waterLabel.setText("No Water Detected\n Valve Closed")
 
-    def deactivate_timer(self): # Deactivates the timer mode
-        # stop and reset timer so that timer stops and progress bar resets
+    def deactivate_timer(self):
+        # Deactivate the timed mode, including stopwatch resets
         self.timedValveWatch.stop()
         self.timedValveWatch.reset()
         self.timedValveTimer.stop()
         self.timerFinished.emit()
 
-    def timed_valve_open(self): # Idle state to wait for timer to reach time limit
+    def timed_valve_open(self):
+        # Loop method for timed mode
         curTimeOpen = int(self.timedValveWatch.value())
         self.ui.timerProgress.setValue(curTimeOpen)
-        # if timer exceeded maximum value, call deactivate_timer
+        # If timer exceeded maximum value, exit timed mode
         if curTimeOpen >= MAX_OPEN_SECONDS:
             self.deactivate_timer()
 
-    def update_valve_timer(self): # Updates the valve's total time open
-        # indicate valveWatch should be reset at midnight
-        if time.strftime("%H:%M:%S") == "00:00:00":
-            self.valveTimerShouldReset = True
+    def update_valve_timer(self):
+        # Updates the valve's total time open
 
-        # if valveTimer is running, valve is on, so update notificationLabel and check if time exceeded
+        # valveWatch should be reset at midnight
+        if time.strftime("%H:%M:%S") == "00:00:00":
+            self.valveTimeShouldReset = True
+
+        # If valveTimer is running, the valve should be on, so update notificationLabel and check if time exceeded
         if self.valveWatch.running:
             curTimeOpen = self.valveWatch.value()
             self.ui.notificationLabel.setText(str(math.floor(curTimeOpen)) + ' seconds open')
 
-            # stop everything if exceeded maximum time for the day
+            # Stop everything if exceeded maximum time for the day
             if curTimeOpen >= MAX_OPEN_SECONDS:
                 self.timeLimitReached.emit()
 
-        # reset valveTimer if valve is shut off and it should reset
-        elif self.valveTimerShouldReset:
-            self.valveTimerShouldReset = False
+        # Reset valveTimer if valve is shut off and it should reset
+        elif self.valveTimeShouldReset:
+            self.valveTimeShouldReset = False
             self.valveWatch.reset()
 
-    def update_clock(self): # Updates Clock at top banner every 0.5 second (500 miliseconds)
+    def update_clock(self):
+        # Updates clockLabel text with current time
         timeDate = time.asctime()
         self.ui.clockLabel.setText(timeDate) 
 
@@ -148,6 +165,7 @@ class UI(QMainWindow):
         # This is the start of a state machine for the system. Using this we can change the states and text of buttons easily
         # Connecting the methods that will be moved to pin_devices I haven't figure out yet
         
+        # Lot of state creation, transitions, etc.
         self.machine = QStateMachine()
         
         self.idle = QState()
@@ -193,6 +211,7 @@ class UI(QMainWindow):
         self.machine.setInitialState(self.idle)
         self.machine.setErrorState(self.idle)
 
+        # Create the EventLoop down here since there are some overlapping dependencies between these two objects
         self.eventLoop = EventLoop(self)
         self.manualEnabled.addTransition(self.eventLoop.timeLimitReached, self.idle)
         self.sensorEnabled.addTransition(self.eventLoop.timeLimitReached, self.idle)
