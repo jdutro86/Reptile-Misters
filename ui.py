@@ -52,6 +52,8 @@ class EventLoop(QObject):
         ui.sensorEnabled.exited.connect(self.waterCheckTimer.stop)
         ui.timerEnabled.entered.connect(self.timedValveTimer.start)
 
+        ui.idle.entered.connect(self.close_valve)
+
     def open_valve(self): # Open valve
         # logistical stuff only executes if valve is closed
         if not self.valveWatch.running:
