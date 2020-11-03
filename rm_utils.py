@@ -6,8 +6,8 @@ import time
 
 # Allows simplified tracking of time
 class Stopwatch(object):
-    def __init__(self):
-        self.startTime = time.time()
+    def __init__(self, startTime=time.time()):
+        self.startTime = startTime
         self.running = False
         self.totalTime = 0
 
