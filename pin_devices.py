@@ -1,5 +1,5 @@
 """pin_devices.py
-Contains methods for devices connected to the Pi. i.e Water Sensor, Valve, LED Light, Speakers
+Contains methods for devices connected to the Pi. i.e Water Sensor, Valve, LED Light, and Speakers
 """
 
 try: # Check if running on Raspi
