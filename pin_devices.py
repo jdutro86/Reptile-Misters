@@ -32,6 +32,7 @@ def rpi_cleanup(): # Cleanup RPi.GPIO
     if USE_GPIO:
         GPIO.cleanup()
 
+'''
 def lightning():
     if USE.GPIO:
         for led in range(pixels.count()):
@@ -40,3 +41,4 @@ def lightning():
         
 def turnOffLED():
     pixels.clear()
+    '''
