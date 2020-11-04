@@ -34,7 +34,7 @@ def rpi_cleanup(): # Cleanup RPi.GPIO
 
 '''
 def lightning():
-    if USE.GPIO:
+    if USE_GPIO:
         for led in range(pixels.count()):
             pixels.set_pixels(led, Adafruit_WS2801.RGB_to_color(255,255,255))
         pixels.show()
