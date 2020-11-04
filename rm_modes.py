@@ -4,7 +4,7 @@ Contains all the various modes of the main program.
 
 from PyQt5.QtCore import QTimer, pyqtSignal, QObject
 
-from pin_devices import output_valve, water_detected, rpi_cleanup
+from pin_devices import output_valve, water_detected, rpi_cleanup, lightning, turnOffLED
 from rm_utils import Stopwatch, TimeStampLog
 
 import time
@@ -164,6 +164,7 @@ class EventLoop(QObject):
             self.valveRecord.open_time(time.time())
             self.ui.lastOpenLabel.setText('Last open: ' + self.valveRecord.get_last_open())
             self.update_log()
+        lightning()
         output_valve(1)
     
     def close_valve(self):
@@ -173,6 +174,7 @@ class EventLoop(QObject):
             self.valveRecord.close_time(time.time())
             self.ui.lastOpenLabel.setText('Last open: ' + self.valveRecord.get_last_open() + " for " + self.valveRecord.get_time_open() + " seconds")
             self.update_log()
+        turnOffLED()
         output_valve(0)
 
     def update_log(self):

@@ -20,6 +20,7 @@ valveTimer = Stopwatch()
 timedValveTimer = Stopwatch()
 valveRecord = TimeStampLog()
 
+"""
 def open_valve(): # Open valve
     # logistical stuff only executes if valve is closed
     if not valveTimer.running:
@@ -149,6 +150,7 @@ def update_log():
     window.logLabel.setText('Open ' + valveRecord.times_open() + ' times(s) today\n'
                             + 'Closed ' + valveRecord.times_closed() + ' time(s) today')
 
+"""
 # Main
 try:
     

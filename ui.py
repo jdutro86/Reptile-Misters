@@ -37,7 +37,6 @@ class UI(QMainWindow):
         self.showFullScreen()
         
         # This is the start of a state machine for the system. Using this we can change the states and text of buttons easily
-        # Connecting the methods that will be moved to pin_devices I haven't figure out yet
         
         # Lot of state creation, transitions, etc.
         self.machine = QStateMachine()
