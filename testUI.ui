@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>300</height>
+    <width>817</width>
+    <height>591</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -149,6 +149,45 @@
    <property name="text">
     <string>TextLabel</string>
    </property>
+  </widget>
+  <widget class="QGroupBox" name="valveControlBox">
+   <property name="geometry">
+    <rect>
+     <x>400</x>
+     <y>60</y>
+     <width>251</width>
+     <height>80</height>
+    </rect>
+   </property>
+   <property name="title">
+    <string>Valve Control</string>
+   </property>
+   <widget class="QRadioButton" name="sensorRadio">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>30</y>
+      <width>131</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Enable Water Sensor</string>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="scheduleRadio">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>50</y>
+      <width>111</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Valve on Schedule</string>
+    </property>
+   </widget>
   </widget>
  </widget>
  <resources/>

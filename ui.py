@@ -2,7 +2,7 @@
 Contains all UI-related stuff and logic.
 """
 
-from PyQt5.QtWidgets import QMainWindow, QPushButton, QLabel, QProgressBar
+from PyQt5.QtWidgets import QMainWindow, QPushButton, QLabel, QProgressBar, QRadioButton
 from PyQt5.QtCore import QStateMachine, QState
 from PyQt5 import uic
 from rm_modes import EventLoop
@@ -37,6 +37,8 @@ class UI(QMainWindow):
         self.waterLabel = self.findChild(QLabel, "waterLabel")
         self.logLabel = self.findChild(QLabel, "logLabel")
 
+        self.sensorRadio = self.findChild(QRadioButton, "sensorRadio")
+        
         self.timerProgress.setMaximum(maxOpenSeconds)
         self.showFullScreen()
         
@@ -60,8 +62,10 @@ class UI(QMainWindow):
         self.idle.assignProperty(self.timedSwitch, "enabled", True)
         self.idle.assignProperty(self.timerProgress, "value", 0)
         self.idle.addTransition(self.valveSwitch.clicked, self.manualEnabled)
-        self.idle.addTransition(self.sensorSwitch.clicked, self.sensorEnabled)
+        #self.idle.addTransition(self.sensorSwitch.clicked, self.sensorEnabled)
         self.idle.addTransition(self.timedSwitch.clicked, self.timerEnabled)
+        
+        self.idle.addTransition(self.sensorRadio.clicked, self.sensorEnabled)
 
         self.manualEnabled.assignProperty(self.valveSwitch, "text", "Close Valve")
         self.manualEnabled.assignProperty(self.sensorSwitch, "enabled", False)

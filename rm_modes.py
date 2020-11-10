@@ -6,7 +6,8 @@ from PyQt5.QtCore import QTimer, pyqtSignal, QObject
 
 from pin_devices import output_valve, water_detected, rpi_cleanup
 #, lightning, turnOffLED
-from rm_utils import Stopwatch, TimeStampLog
+from rm_utils import Stopwatch
+from logs import TimeStampLog
 
 import time
 import math
@@ -251,13 +252,16 @@ class EventLoop(QObject):
         """
         Method for opening the valve that includes all the logistical stuff.
         """
-
         # Logistical stuff only executes if valve is closed
         if not self.valveWatch.running:
             self.valveWatch.start()
+            print("a")
             self.valveRecord.open_time(time.time())
-            self.ui.lastOpenLabel.setText('Last open: ' + self.valveRecord.get_last_open())
+            print("a")
+            #self.ui.lastOpenLabel.setText('Last open: ' + self.valveRecord.get_last_open())
+            print("a")
             self.update_log()
+            print("a")
         #lightning()
         output_valve(1)
     
@@ -270,7 +274,8 @@ class EventLoop(QObject):
         if self.valveWatch.running:
             self.valveWatch.stop()
             self.valveRecord.close_time(time.time())
-            self.ui.lastOpenLabel.setText('Last open: ' + self.valveRecord.get_last_open() + " for " + self.valveRecord.get_time_open() + " seconds")
+            #this line cause the program to crash
+            #self.ui.lastOpenLabel.setText('Last open: ' + self.valveRecord.get_last_open() + " for " + self.valveRecord.get_time_open() + " seconds")
             self.update_log()
         #turnOffLED()
         output_valve(0)
