@@ -11,141 +11,230 @@ from rm_utils import Stopwatch, TimeStampLog
 import time
 import math
 
-# Still need to clean up, decrease dependencies on parent object (EventLoop) within each mode
-# Potential improvement: work solely based off of signals, UI updates triggered by signals
-# emitted within each Mode
+# Still need to clean up, decrease dependencies on parent object (EventLoop) within a few modes
+# Potential improvement for future sems: work solely based off of signals, UI updates triggered
+# by signals emitted within each Mode, pass information using these pyqtSignals
 class AbstractMode(QObject):
-    def __init__(self, parent, UPDATE_MS):
+    """
+    I know, I know, it's called a 'mode', but it's really a loop.
+    Just abstracts looping logic into an object, with decent extendability.
+    """
+
+    def __init__(self, parent, updateMs):
+        """
+        Initializer for the AbstractMode object, creating the QTimer for looping. Add in any custom logic.
+        `parent` should be the EventLoop object. A little messy with inter-dependencies, but that's how it is for now.
+        `updateMs` is the interval between loops.
+        """
         super(AbstractMode, self).__init__()
         self.parent = parent
-        self.UPDATE_MS = UPDATE_MS
+        self.updateMs = updateMs
         self.timer = QTimer(self)
-        self.timer.setInterval(UPDATE_MS)
+        self.timer.setInterval(updateMs)
         self.timer.timeout.connect(self.update)
 
     def activate(self):
-        # Called to activate the timer
+        """
+        Called to activate the loop. Add in any custom logic.
+        """
         self.timer.start()
 
     def deactivate(self):
-        # Called to deactivate the timer
+        """
+        Called to deactivate the loop. Add in any custom logic.
+        """
         self.timer.stop()
 
     def update(self):
-        # Called each interval of the timer
+        """
+        Called each interval of the loop. Add in any custom logic.
+        """
         pass
 
 class SensorMode(AbstractMode):
-    def __init__(self, parent, UPDATE_MS, label):
-        super(SensorMode, self).__init__(parent, UPDATE_MS)
+    """
+    Object representing the sensor mode of the UI.
+    Uses the water sensor for opening/closing the valve.
+    """
+
+    def __init__(self, parent, updateMs, label):
+        """
+        Initializer for the object. Includes a GUI element.
+        `label` is the label that should be updated when the sensor state changes.
+        """
+        super(SensorMode, self).__init__(parent, updateMs)
         self.label = label
+        self.previousState = None
 
     def update(self):
-        # Loop method for sensor mode
+        """
+        Turns on/off the valve depending on if water is detected
+        """
         waterDetected = water_detected()
 
-        if waterDetected and not self.parent.valveWatch.running: # Water Detected and valve off
-            self.parent.open_valve()
-            self.label.setText("Water Detected\n Valve Open")
-        elif not waterDetected and self.parent.valveWatch.running: # No Water Detected and valve on
-            self.parent.close_valve()
-            self.label.setText("No Water Detected\n Valve Closed")
+        if waterDetected: # Water Detected
+            if self.previousState is None or not self.previousState:
+                self.parent.open_valve()
+                self.label.setText("Water Detected\n Valve Open")
+            self.previousState = True
+        elif not waterDetected: # No Water Detected
+            if self.previousState is None or self.previousState:
+                self.parent.close_valve()
+                self.label.setText("No Water Detected\n Valve Closed")
+            self.previousState = False
 
 class TimedMode(AbstractMode):
-    def __init__(self, parent, UPDATE_MS, MAX_OPEN_SECONDS, progressBar, signal):
-        super(TimedMode, self).__init__(parent, UPDATE_MS)
-        self.MAX_OPEN_SECONDS = MAX_OPEN_SECONDS
+    """
+    Object representing the timed mode of the UI.
+    Turns the valve on for a preset amount of time.
+    Simply change maxOpenSeconds for this object if you want to change that amount of time.
+    """
+
+    def __init__(self, parent, updateMs, maxOpenSeconds, progressBar, signal):
+        """
+        Initializer for the object.
+        `maxOpenSeconds` is the time to open the valve for.
+        `progressBar` is the progress bar to slowly fill.
+        `signal` is the pyqtSignal to emit when the timer has finished.
+        """
+        super(TimedMode, self).__init__(parent, updateMs)
+        self.maxOpenSeconds = maxOpenSeconds
         self.progressBar = progressBar
         self.signal = signal
         self.timerWatch = Stopwatch()
 
     def activate(self):
+        """
+        Activation method.
+        Essentially the same as AbstractMode's, but also starts the watch and opens the valve.
+        """
         self.timerWatch.start()
         self.parent.open_valve()
         super(TimedMode, self).activate()
 
     def deactivate(self):
+        """
+        Deactivation method.
+        Essentially the same as AbstractMode's, but also stops and resets the watch. Closing the valve happens upon transitioning to idle state.
+        """
         self.timerWatch.stop()
         self.timerWatch.reset()
         super(TimedMode, self).deactivate()
 
     def update(self):
-        # Loop method for timed mode
+        """
+        Updates the time and checks if the time has exceeded maxOpenSeconds.
+        """
         curTimeOpen = int(self.timerWatch.value())
         self.progressBar.setValue(curTimeOpen)
         # If timer exceeded maximum value, emit signal
-        if curTimeOpen >= self.MAX_OPEN_SECONDS:
+        if curTimeOpen >= self.maxOpenSeconds:
             self.signal.emit()
 
 class TimeOpenMode(AbstractMode):
-    def __init__(self, parent, UPDATE_MS, MAX_OPEN_SECONDS, label, signal):
-        super(TimeOpenMode, self).__init__(parent, UPDATE_MS)
-        self.MAX_OPEN_SECONDS = MAX_OPEN_SECONDS
+    """
+    Object representing the update loop for the time the valve has been open.
+    """
+
+    def __init__(self, parent, updateMs, maxOpenSeconds, label, signal):
+        """
+        Initializer for the object.
+        `maxOpenSeconds` is the maximum amount of time the valve should be open for each day.
+        `label` is the label to update with the time open.
+        `signal` is the signal to emit upon the total time open exceeding maxOpenSeconds.
+        """
+        super(TimeOpenMode, self).__init__(parent, updateMs)
+        self.maxOpenSeconds = maxOpenSeconds
         self.timerWatch = Stopwatch()
         self.timerShouldReset = False
         self.label = label
         self.signal = signal
 
     def update(self):
-        # Updates the valve's total time open
+        """
+        Updates the GUI element and handles time limit-related logic.
+        """
 
-        # timerWatch should be reset at midnight
+        # The time should reset at midnight
         if time.strftime("%H:%M:%S") == "00:00:00":
             self.timerShouldReset = True
 
-        # If valveTimer is running, the valve should be on, so update notificationLabel and check if time exceeded
+        # If timerWatch is running, the valve should be on, so continuously update the label and check if time exceeded
         if self.timerWatch.running:
             curTimeOpen = self.timerWatch.value()
             self.label.setText(str(math.floor(curTimeOpen)) + ' seconds open')
 
             # Emit signal if exceeded maximum time for the day
-            if curTimeOpen >= self.MAX_OPEN_SECONDS:
+            if curTimeOpen >= self.maxOpenSeconds:
                 self.signal.emit()
 
-        # Reset valveTimer if valve is shut off and it should reset
+        # Reset valveTimer if valve is shut off (implied above) and it should reset; this fixes the issue of resetting at midnight
         elif self.timerShouldReset:
             self.timerShouldReset = False
             self.timerWatch.reset()
 
 class ClockMode(AbstractMode):
-    def __init__(self, parent, UPDATE_MS, label):
-        super(ClockMode, self).__init__(parent, UPDATE_MS)
+    """
+    Object representing the clock label updating.
+    """
+
+    def __init__(self, parent, updateMs, label):
+        """
+        Initializer for the object.
+        `label` is the label the time should be displayed onto.
+        """
+        super(ClockMode, self).__init__(parent, updateMs)
         self.label = label
 
     def update(self):
-        # Updates clockLabel text with current time
+        """
+        Updates the label with the current time.
+        """
         timeDate = time.asctime()
         self.label.setText(timeDate)
 
 # Inherits QObject to allow for pyqtSignal usage
 class EventLoop(QObject):
-    # Custom signals for state transitions
-    timerFinished = pyqtSignal()
-    timeLimitReached = pyqtSignal()
+    """
+    Handles more of the GUI logic, this time more centered around (surprise) the actual events and loops.
+    To be clearer, it creates all the loops that occur actively or passively in the program, and also
+    specifies the logic that should be executed upon entering/exiting each state.
+    """
 
-    def __init__(self, ui, UPDATE_MS=10, SLOW_UPDATE_MS=500, MAX_OPEN_SECONDS=300):
+    # Custom signals for state transitions
+    timerFinished = pyqtSignal() # emitted when timed mode finishes
+    timeLimitReached = pyqtSignal() # emitted when time limit for the day reached
+
+    def __init__(self, ui, updateMs=10, slowUpdateMs=500, maxOpenSeconds=300):
+        """
+        Initializer for the object. Basically everything happens here.
+        `updateMs` is the interval between loops.
+        `slowUpdateMs` is the interval between slower loops.
+        `maxOpenSeconds` is the maximum amount of time the valve should be opened for each day.
+        """
         super(EventLoop, self).__init__()
         self.ui = ui
-        self.UPDATE_MS = UPDATE_MS
-        self.SLOW_UPDATE_MS = SLOW_UPDATE_MS
-        self.MAX_OPEN_SECONDS = MAX_OPEN_SECONDS
+        self.updateMs = updateMs
+        self.slowUpdateMs = slowUpdateMs
+        self.maxOpenSeconds = maxOpenSeconds
 
+        # Keeps track of the valve opening/closing
         self.valveRecord = TimeStampLog()
 
-        # QTimer for valve open time tracking
-        self.timeOpenMode = TimeOpenMode(self, self.UPDATE_MS, self.MAX_OPEN_SECONDS, ui.notificationLabel, self.timeLimitReached)
+        # Loop for tracking the time the valve has been open for
+        self.timeOpenMode = TimeOpenMode(self, self.updateMs, self.maxOpenSeconds, ui.notificationLabel, self.timeLimitReached)
         self.valveWatch = self.timeOpenMode.timerWatch
         self.timeOpenMode.activate()
 
-        # QTimer for clock updates
-        self.clockMode = ClockMode(self, self.SLOW_UPDATE_MS, ui.clockLabel)
+        # Loop for updating the clock
+        self.clockMode = ClockMode(self, self.slowUpdateMs, ui.clockLabel)
         self.clockMode.activate()
 
-        # QTimer for sensor mode
-        self.sensorMode = SensorMode(self, self.UPDATE_MS, ui.waterLabel)
+        # Loop for sensor mode
+        self.sensorMode = SensorMode(self, self.updateMs, ui.waterLabel)
 
-        # QTimer for timed mode
-        self.timedMode = TimedMode(self, self.UPDATE_MS, self.MAX_OPEN_SECONDS, ui.timerProgress, self.timerFinished)
+        # Loop for timed mode
+        self.timedMode = TimedMode(self, self.updateMs, self.maxOpenSeconds, ui.timerProgress, self.timerFinished)
 
         # State machine-related transition logic
         ui.manualEnabled.entered.connect(self.open_valve)
@@ -155,10 +244,14 @@ class EventLoop(QObject):
         ui.timerEnabled.entered.connect(self.timedMode.activate)
         ui.timerEnabled.exited.connect(self.timedMode.deactivate)
 
-        # VERY IMPORTANT
+        # VERY IMPORTANT, upon entering idle it should always close the valve
         ui.idle.entered.connect(self.close_valve)
 
     def open_valve(self):
+        """
+        Method for opening the valve that includes all the logistical stuff.
+        """
+
         # Logistical stuff only executes if valve is closed
         if not self.valveWatch.running:
             self.valveWatch.start()
@@ -169,6 +262,10 @@ class EventLoop(QObject):
         output_valve(1)
     
     def close_valve(self):
+        """
+        Method for closing the valve that includes all the logistical stuff.
+        """
+
         # Logistical stuff only executes if valve is open
         if self.valveWatch.running:
             self.valveWatch.stop()
@@ -179,6 +276,10 @@ class EventLoop(QObject):
         output_valve(0)
 
     def update_log(self):
+        """
+        Updates the log label with times opened/closed.
+        """
+
         # Update the logging text
         self.ui.logLabel.setText('Open ' + self.valveRecord.times_open() + ' times(s) today\n' +
         'Closed ' + self.valveRecord.times_closed() + ' time(s) today')

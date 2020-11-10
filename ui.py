@@ -2,24 +2,28 @@
 Contains all UI-related stuff and logic.
 """
 
-from PyQt5.QtWidgets import QMainWindow, QApplication, QWidget, QPushButton, QLabel, QProgressBar
-from PyQt5.QtCore import QTimer, QStateMachine, QState, pyqtSignal, QObject
+from PyQt5.QtWidgets import QMainWindow, QPushButton, QLabel, QProgressBar
+from PyQt5.QtCore import QStateMachine, QState
 from PyQt5 import uic
-
 from rm_modes import EventLoop
 
-MAX_OPEN_SECONDS = 300
-SLOW_UPDATE_MS = 500
-UPDATE_MS = 10
-
 class UI(QMainWindow):
+    """
+    The UI object contains all GUI objects, such as labels and buttons.
+    Also contains the state machine used for the GUI logic.
+    """
     
-    def __init__(self):
+    def __init__(self, updateMs, slowUpdateMs, maxOpenSeconds):
+        """
+        Initializer for the GUI. Loads the ui file and creates the state machine.
+        `updateMs` is the interval between loops.
+        `slowUpdateMs` is the interval between slower loops, i.e. updating the clock label.
+        `maxOpenSeconds` is the maximum amount of time the valve should be opened for each day.
+        """
         super(UI, self).__init__()
         uic.loadUi("testUI.ui", self)
 
         # Find the widgets in the .ui file
- 
         self.clockLabel = self.findChild(QLabel, "clockLabel")
         self.lastOpenLabel = self.findChild(QLabel, "lastOpenLabel")
         self.notificationLabel = self.findChild(QLabel, "notificationLabel")
@@ -33,12 +37,10 @@ class UI(QMainWindow):
         self.waterLabel = self.findChild(QLabel, "waterLabel")
         self.logLabel = self.findChild(QLabel, "logLabel")
 
-        self.timerProgress.setMaximum(MAX_OPEN_SECONDS)
+        self.timerProgress.setMaximum(maxOpenSeconds)
         self.showFullScreen()
         
-        # This is the start of a state machine for the system. Using this we can change the states and text of buttons easily
-        
-        # Lot of state creation, transitions, etc.
+        # Creates the state machine
         self.machine = QStateMachine()
         
         self.idle = QState()
@@ -50,6 +52,7 @@ class UI(QMainWindow):
         self.timerRunning = QState(self.timerEnabled)
         self.timerFinished = QState(self.timerEnabled)
 
+        # Assign all state properties + transitions
         self.idle.assignProperty(self.valveSwitch, "text", "Open Valve")
         self.idle.assignProperty(self.valveSwitch, "enabled", True)
         self.idle.assignProperty(self.sensorSwitch, "text", "Enable\n Water Sensor")
@@ -79,6 +82,7 @@ class UI(QMainWindow):
         self.timerEnabled.assignProperty(self.timedSwitch, "enabled", False)
         self.timerEnabled.addTransition(self.stopButton.clicked, self.idle)
         
+        # Adds all states to the state machine
         self.machine.addState(self.idle)
         self.machine.addState(self.manualEnabled)
         self.machine.addState(self.sensorEnabled)
@@ -87,10 +91,13 @@ class UI(QMainWindow):
         self.machine.setErrorState(self.idle)
 
         # Create the EventLoop down here since there are some overlapping dependencies between these two objects
-        self.eventLoop = EventLoop(self, UPDATE_MS, SLOW_UPDATE_MS, MAX_OPEN_SECONDS)
+        self.eventLoop = EventLoop(self, updateMs, slowUpdateMs, maxOpenSeconds)
+
+        # Further transitions based on EventLoop pyqtSignals
         self.manualEnabled.addTransition(self.eventLoop.timeLimitReached, self.idle)
         self.sensorEnabled.addTransition(self.eventLoop.timeLimitReached, self.idle)
         self.timerEnabled.addTransition(self.eventLoop.timerFinished, self.idle)
         self.timerEnabled.addTransition(self.eventLoop.timeLimitReached, self.idle)
         
+        # Start the state machine (and thus all GUI logic)
         self.machine.start()
