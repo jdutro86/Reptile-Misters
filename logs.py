@@ -55,3 +55,5 @@ class TimeStampLog():
         Gets the total number of times the valve has been closed.
         """
         return str(len(self.closeTimeList) - 1)
+
+# Other logs will be added, including records relating to changes in tanks/habitats and changes to settings

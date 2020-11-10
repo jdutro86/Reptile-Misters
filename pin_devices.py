@@ -12,10 +12,12 @@ try: # Check if running on Raspi
     VALVE_SIGNAL_GPIO = 38
     GPIO.setup(WATER_SIGNAL_GPIO, GPIO.IN) # Water Signal In 
     GPIO.setup(VALVE_SIGNAL_GPIO, GPIO.OUT) # Valve Signal Out
+    '''
     LED_COUNT = 32
     LED_CLOCK = 18
     LED_DOUT = 23
     pixels = Adafruit_WS2801.WS2801Pixels(LED_COUNT, clk=LED_CLOCK, do=LED_DOUT)
+    '''
     
     USE_GPIO = True
 except ImportError: # If not running on Raspi
@@ -32,6 +34,8 @@ def rpi_cleanup(): # Cleanup RPi.GPIO
     if USE_GPIO:
         GPIO.cleanup()
 
+
+# Lightning methods are not ready yet, unsure how the device connects
 '''
 def lightning():
     if USE_GPIO:

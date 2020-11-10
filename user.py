@@ -36,6 +36,8 @@ class UserList(list):
         if name in self.users.get_name():
             users.remove(name)
             
+    # The return value might need to be changed depending on how a password 
+    # dialog is added in the future
     def check_password(self, password):
         hashedpass = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), self.salt, 100000)
         if hashedpass in self.users.get_key():
