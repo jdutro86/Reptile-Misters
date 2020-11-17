@@ -11,9 +11,10 @@ from logs import TimeStampLog
 
 import time
 import math
+import keyboard
 
 # Still need to clean up, decrease dependencies on parent object (EventLoop) within a few modes
-# Potential improvement for future sems: work solely based off of signals, UI updates triggered
+# Potential improvement for future seems: work solely based off of signals, UI updates triggered
 # by signals emitted within each Mode, pass information using these pyqtSignals
 class AbstractMode(QObject):
     """
@@ -73,15 +74,17 @@ class SensorMode(AbstractMode):
         """
         waterDetected = water_detected()
 
-        if waterDetected: # Water Detected
+        if waterDetected or keyboard.is_pressed('p'): # Water Detected
+            startValve = WaterDetected(self, self.updateMs, self.maxOpenSeconds, self.label)
+            startValve.activate()
             if self.previousState is None or not self.previousState:
                 self.parent.open_valve()
-                self.label.setText("Water Detected\n Valve Open")
+                self.label.setText("Currently Running")
             self.previousState = True
         elif not waterDetected: # No Water Detected
             if self.previousState is None or self.previousState:
                 self.parent.close_valve()
-                self.label.setText("No Water Detected\n Valve Closed")
+                self.label.setText("No Water Detected")
             self.previousState = False
 
 class TimedMode(AbstractMode):
@@ -232,7 +235,7 @@ class EventLoop(QObject):
         self.clockMode.activate()
 
         # Loop for sensor mode
-        self.sensorMode = SensorMode(self, self.updateMs, ui.waterLabel)
+        self.sensorMode = SensorMode(self, self.updateMs, ui.waterStatusLabel)
 
         # Loop for timed mode
         self.timedMode = TimedMode(self, self.updateMs, self.maxOpenSeconds, ui.timerProgress, self.timerFinished)
@@ -255,13 +258,9 @@ class EventLoop(QObject):
         # Logistical stuff only executes if valve is closed
         if not self.valveWatch.running:
             self.valveWatch.start()
-            print("a")
             self.valveRecord.open_time(time.time())
-            print("a")
             #self.ui.lastOpenLabel.setText('Last open: ' + self.valveRecord.get_last_open())
-            print("a")
             self.update_log()
-            print("a")
         #lightning()
         output_valve(1)
     
@@ -286,5 +285,6 @@ class EventLoop(QObject):
         """
 
         # Update the logging text
-        self.ui.logLabel.setText('Open ' + self.valveRecord.times_open() + ' times(s) today\n' +
-        'Closed ' + self.valveRecord.times_closed() + ' time(s) today')
+        #self.ui.logLabel.setText('Open ' + self.valveRecord.times_open() + ' times(s) today\n' +
+        #'Closed ' + self.valveRecord.times_closed() + ' time(s) today')
+        pass

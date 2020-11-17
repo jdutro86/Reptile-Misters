@@ -32,7 +32,7 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QTabWidget" name="MainTabs">
+   <widget class="QTabWidget" name="mainTabs">
     <property name="geometry">
      <rect>
       <x>0</x>
@@ -61,14 +61,14 @@
     <property name="currentIndex">
      <number>2</number>
     </property>
-    <widget class="QWidget" name="Habitats">
+    <widget class="QWidget" name="habitats">
      <property name="autoFillBackground">
       <bool>false</bool>
      </property>
      <attribute name="title">
       <string>                   Habitats                   </string>
      </attribute>
-     <widget class="QScrollArea" name="HabitatScrollingList">
+     <widget class="QScrollArea" name="habitatScrollingList">
       <property name="geometry">
        <rect>
         <x>0</x>
@@ -92,11 +92,11 @@
       </widget>
      </widget>
     </widget>
-    <widget class="QWidget" name="Records">
+    <widget class="QWidget" name="records">
      <attribute name="title">
       <string>                  Records                  </string>
      </attribute>
-     <widget class="QTabWidget" name="RecordsTabs">
+     <widget class="QTabWidget" name="recordsTabs">
       <property name="geometry">
        <rect>
         <x>0</x>
@@ -117,23 +117,33 @@
       <property name="tabsClosable">
        <bool>false</bool>
       </property>
-      <widget class="QWidget" name="ValveRecordsTab">
+      <widget class="QWidget" name="valveRecordsTab">
        <attribute name="title">
         <string>Valve Records</string>
        </attribute>
+       <widget class="QTableView" name="valveRecordTable">
+        <property name="geometry">
+         <rect>
+          <x>15</x>
+          <y>11</y>
+          <width>761</width>
+          <height>261</height>
+         </rect>
+        </property>
+       </widget>
       </widget>
-      <widget class="QWidget" name="HabitatRecordsTab">
+      <widget class="QWidget" name="habitatRecordsTab">
        <attribute name="title">
         <string>Habitat Records</string>
        </attribute>
       </widget>
      </widget>
     </widget>
-    <widget class="QWidget" name="Settings">
+    <widget class="QWidget" name="settings">
      <attribute name="title">
       <string>                  Settings                  </string>
      </attribute>
-     <widget class="QTabWidget" name="SettingsTabs">
+     <widget class="QTabWidget" name="settingsTabs">
       <property name="geometry">
        <rect>
         <x>0</x>
@@ -150,11 +160,11 @@
       <property name="currentIndex">
        <number>0</number>
       </property>
-      <widget class="QWidget" name="ValveControlTab">
+      <widget class="QWidget" name="valveControlTab">
        <attribute name="title">
         <string>Valve Control</string>
        </attribute>
-       <widget class="QPushButton" name="demoButton">
+       <widget class="QPushButton" name="demoSwitch">
         <property name="geometry">
          <rect>
           <x>510</x>
@@ -256,12 +266,12 @@
         </layout>
        </widget>
       </widget>
-      <widget class="QWidget" name="UsersTab">
+      <widget class="QWidget" name="usersTab">
        <attribute name="title">
         <string>Users</string>
        </attribute>
       </widget>
-      <widget class="QWidget" name="HabitatManagementTab">
+      <widget class="QWidget" name="habitatManagementTab">
        <attribute name="title">
         <string>Habitat Management</string>
        </attribute>
@@ -269,11 +279,11 @@
      </widget>
     </widget>
    </widget>
-   <widget class="QProgressBar" name="progressBar">
+   <widget class="QProgressBar" name="timerProgress">
     <property name="geometry">
      <rect>
-      <x>70</x>
-      <y>405</y>
+      <x>60</x>
+      <y>410</y>
       <width>450</width>
       <height>40</height>
      </rect>
@@ -282,7 +292,7 @@
      <number>24</number>
     </property>
    </widget>
-   <widget class="QPushButton" name="pushButton">
+   <widget class="QPushButton" name="stopButton">
     <property name="geometry">
      <rect>
       <x>570</x>
@@ -310,7 +320,7 @@
      <bool>false</bool>
     </property>
    </widget>
-   <widget class="QLabel" name="WaterStatusLabel">
+   <widget class="QLabel" name="waterLabel">
     <property name="geometry">
      <rect>
       <x>10</x>
@@ -330,10 +340,10 @@
      <string>Water Status:</string>
     </property>
    </widget>
-   <widget class="QLabel" name="WaterStatus">
+   <widget class="QLabel" name="waterStatusLabel">
     <property name="geometry">
      <rect>
-      <x>120</x>
+      <x>100</x>
       <y>10</y>
       <width>161</width>
       <height>21</height>
@@ -765,7 +775,7 @@
      <string>Currently Running</string>
     </property>
    </widget>
-   <widget class="QLabel" name="LastOpenLabel">
+   <widget class="QLabel" name="lastOpenLabel">
     <property name="geometry">
      <rect>
       <x>600</x>
@@ -785,7 +795,7 @@
      <string>Last Open:</string>
     </property>
    </widget>
-   <widget class="QLabel" name="LastOpen">
+   <widget class="QLabel" name="lastOpen">
     <property name="geometry">
      <rect>
       <x>690</x>
@@ -803,6 +813,46 @@
     </property>
     <property name="text">
      <string>00:04 ago</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="clockLabel">
+    <property name="geometry">
+     <rect>
+      <x>290</x>
+      <y>10</y>
+      <width>211</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>10</pointsize>
+      <weight>50</weight>
+      <bold>false</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>Time</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="notificationLabel">
+    <property name="geometry">
+     <rect>
+      <x>60</x>
+      <y>390</y>
+      <width>111</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>10</pointsize>
+      <weight>50</weight>
+      <bold>false</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>Time</string>
     </property>
    </widget>
   </widget>

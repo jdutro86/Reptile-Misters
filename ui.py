@@ -21,23 +21,25 @@ class UI(QMainWindow):
         `maxOpenSeconds` is the maximum amount of time the valve should be opened for each day.
         """
         super(UI, self).__init__()
-        uic.loadUi("testUI.ui", self)
+        uic.loadUi("newUI.ui", self)
+
 
         # Find the widgets in the .ui file
         self.clockLabel = self.findChild(QLabel, "clockLabel")
-        self.lastOpenLabel = self.findChild(QLabel, "lastOpenLabel")
+        #self.lastOpenLabel = self.findChild(QLabel, "lastOpenLabel")
         self.notificationLabel = self.findChild(QLabel, "notificationLabel")
 
         self.stopButton = self.findChild(QPushButton, "stopButton")
-        self.timedSwitch = self.findChild(QPushButton, "timedSwitch")
-        self.valveSwitch = self.findChild(QPushButton, "valveSwitch")
-        self.sensorSwitch = self.findChild(QPushButton, "sensorSwitch")
+        #self.timedSwitch = self.findChild(QPushButton, "timedSwitch")
+        self.demoSwitch = self.findChild(QPushButton, "demoSwitch")
+        #self.sensorSwitch = self.findChild(QPushButton, "sensorSwitch")
         
         self.timerProgress = self.findChild(QProgressBar, "timerProgress")
-        self.waterLabel = self.findChild(QLabel, "waterLabel")
-        self.logLabel = self.findChild(QLabel, "logLabel")
+        self.waterStatusLabel = self.findChild(QLabel, "waterStatusLabel")
+        #self.logLabel = self.findChild(QLabel, "logLabel")
 
-        self.sensorRadio = self.findChild(QRadioButton, "sensorRadio")
+        self.detectRainModeSelect = self.findChild(QRadioButton, "detectRainModeSelect")
+        self.scheduleModeSelect = self.findChild(QRadioButton, "scheduleModeSelect")
         
         self.timerProgress.setMaximum(maxOpenSeconds)
         self.showFullScreen()
@@ -55,35 +57,40 @@ class UI(QMainWindow):
         self.timerFinished = QState(self.timerEnabled)
 
         # Assign all state properties + transitions
-        self.idle.assignProperty(self.valveSwitch, "text", "Open Valve")
-        self.idle.assignProperty(self.valveSwitch, "enabled", True)
-        self.idle.assignProperty(self.sensorSwitch, "text", "Enable\n Water Sensor")
-        self.idle.assignProperty(self.sensorSwitch, "enabled", True)
-        self.idle.assignProperty(self.timedSwitch, "enabled", True)
+        #self.idle.assignProperty(self.valveSwitch, "text", "Open Valve")
+        self.idle.assignProperty(self.demoSwitch, "enabled", True)
+        self.timerEnabled.assignProperty(self.scheduleModeSelect, "enabled", True)
+        self.timerEnabled.assignProperty(self.detectRainModeSelect, "enabled", True)
+        #self.idle.assignProperty(self.sensorSwitch, "text", "Enable\n Water Sensor")
+        #self.idle.assignProperty(self.sensorSwitch, "enabled", True)
+        #self.idle.assignProperty(self.timedSwitch, "enabled", True)
         self.idle.assignProperty(self.timerProgress, "value", 0)
-        self.idle.addTransition(self.valveSwitch.clicked, self.manualEnabled)
+        self.idle.addTransition(self.demoSwitch.clicked, self.manualEnabled)
         #self.idle.addTransition(self.sensorSwitch.clicked, self.sensorEnabled)
-        self.idle.addTransition(self.timedSwitch.clicked, self.timerEnabled)
-        
-        self.idle.addTransition(self.sensorRadio.clicked, self.sensorEnabled)
+        #self.idle.addTransition(self.timedSwitch.clicked, self.timerEnabled)
+        self.idle.addTransition(self.scheduleModeSelect.clicked, self.timerEnabled)
+        self.idle.addTransition(self.detectRainModeSelect.clicked, self.sensorEnabled)
 
-        self.manualEnabled.assignProperty(self.valveSwitch, "text", "Close Valve")
-        self.manualEnabled.assignProperty(self.sensorSwitch, "enabled", False)
-        self.manualEnabled.assignProperty(self.timedSwitch, "enabled", False)
-        self.manualEnabled.addTransition(self.valveSwitch.clicked, self.idle)
+        self.manualEnabled.assignProperty(self.demoSwitch, "text", "Stop Demo")
+        #self.manualEnabled.assignProperty(self.sensorSwitch, "enabled", False)
+        #self.manualEnabled.assignProperty(self.timedSwitch, "enabled", False)
+        self.manualEnabled.addTransition(self.demoSwitch.clicked, self.idle)
         self.manualEnabled.addTransition(self.stopButton.clicked, self.idle)
 
-        self.sensorEnabled.assignProperty(self.valveSwitch, "enabled", False)
-        self.sensorEnabled.assignProperty(self.sensorSwitch, "enabled", True)
-        self.sensorEnabled.assignProperty(self.sensorSwitch, "text", "Disable\n Water Sensor")
-        self.sensorEnabled.assignProperty(self.timedSwitch, "enabled", False)
-        self.sensorEnabled.addTransition(self.sensorSwitch.clicked, self.idle)
+        self.sensorEnabled.assignProperty(self.demoSwitch, "enabled", False)
+        #self.sensorEnabled.assignProperty(self.sensorSwitch, "enabled", True)
+        #self.sensorEnabled.assignProperty(self.sensorSwitch, "text", "Disable\n Water Sensor")
+        #self.sensorEnabled.assignProperty(self.timedSwitch, "enabled", False)
+        #self.sensorEnabled.addTransition(self.sensorSwitch.clicked, self.idle)
+        self.sensorEnabled.addTransition(self.scheduleModeSelect.clicked, self.timerEnabled)
         self.sensorEnabled.addTransition(self.stopButton.clicked, self.idle)
 
         self.timerEnabled.setInitialState(self.timerRunning)
-        self.timerEnabled.assignProperty(self.valveSwitch, "enabled", False)
-        self.timerEnabled.assignProperty(self.sensorSwitch, "enabled", False)
-        self.timerEnabled.assignProperty(self.timedSwitch, "enabled", False)
+        self.timerEnabled.assignProperty(self.demoSwitch, "enabled", False)
+        self.timerEnabled.assignProperty(self.scheduleModeSelect, "enabled", False)
+        self.timerEnabled.assignProperty(self.detectRainModeSelect, "enabled", False)
+        #self.timerEnabled.assignProperty(self.sensorSwitch, "enabled", False)
+        #self.timerEnabled.assignProperty(self.timedSwitch, "enabled", False)
         self.timerEnabled.addTransition(self.stopButton.clicked, self.idle)
         
         # Adds all states to the state machine
