@@ -5,6 +5,7 @@
 # A backup is stored with the name ${CODE_DIR}_old.
 # Hopefully the sh command is stored at /bin/sh.
 # Should restart the terminal after usage, or some shell glitchiness might occur due to the moving around.
+# Note, if git is installed on the pi, you should probably just use that. This is just for if it isn't.
 
 # The name of the unzipped master branch folder
 UNZIP_NAME=Reptile-Misters-master
